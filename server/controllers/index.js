@@ -1,6 +1,8 @@
 // pull in our models. This will automatically load the index.js from that folder
 const models = require('../models');
 
+const {Cat} = models;
+
 const hostIndex = (req, res) => {
   let name = 'unknown';
 
@@ -11,8 +13,15 @@ const hostIndex = (req, res) => {
   });
 };
 
-const hostPage1 = (req, res) => {
+const hostPage1 = async (req, res) => {
 
+  try{
+    const docs = await Cat.find({}).lean().exec();
+    return res.render('page1', {cats:docs});
+  } catch(err){
+    console.log(err);
+    return res.status(500).json({});
+  }
 };
 
 const hostPage2 = (req, res) => {
@@ -31,7 +40,26 @@ const setName = (req, res) => {
   if (!req.body.firstname || !req.body.lastname || !req.body.beds) {
     return res.status(400).json({ error: 'firstname, lastname and beds are all required' });
   }
-  
+
+  const catData = {
+    name: `${req.body.firstname} ${req.body.lastname}`,
+    bedsOwned: req.body.beds,
+  }
+  const newCat = new Cat(catData);
+  console.log(newCat);
+
+  try{
+    await newCat.save();
+    return res.status(201).json({
+      name: newCat.name,
+      beds: newCat.bedsOwned
+    });
+
+  } catch(err){
+    console.log(err);
+    return res.status(500).json();
+  }
+
 };
 
 const searchName = (req, res) => {
